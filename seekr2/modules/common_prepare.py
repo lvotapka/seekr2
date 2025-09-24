@@ -856,23 +856,55 @@ def create_bd_milestones(model, model_input):
             bd_milestone.directory = bd_milestone.name
             
             if model.get_type() == "mmvt":
-                bd_milestone.outer_milestone = anchor.milestones[0]
+                closest_milestone = 0
+                closest_neighbor_anchor_index = 0
+                closest_avg = 0.0
+                closest_neighbor_dist = 9e9
+                for i, milestone in enumerate(anchor.milestones):
+                    dist = abs(milestone.variables["me_0"] - milestone.variables["neighbor_0"])
+                    if dist < closest_neighbor_dist:
+                        closest_milestone = i
+                        closest_neighbor_anchor_index = milestone.neighbor_anchor_index
+                        closest_neighbor_dist = dist
+                        closest_avg = 0.5 * (milestone.variables["me_0"] + milestone.variables["neighbor_0"])
+                
+                bd_milestone.outer_milestone = base.Milestone()
+                bd_milestone.outer_milestone.index = anchor.milestones[closest_milestone].index
+                bd_milestone.outer_milestone.neighbor_anchor_index = anchor.milestones[closest_milestone].neighbor_anchor_index
+                bd_milestone.outer_milestone.alias_index = anchor.milestones[closest_milestone].alias_index
+                bd_milestone.outer_milestone.cv_index = 0
+                bd_milestone.outer_milestone.variables = {"radius":closest_avg}
+                bd_milestone.outer_milestone.is_source_milestone = anchor.milestones[closest_milestone].is_source_milestone
+                #bd_milestone.outer_milestone = anchor.milestones[closest_milestone]
+                #bd_milestone.outer_milestone = anchor.milestones[0]
+                
                 assert "radius" in bd_milestone.outer_milestone.variables,\
                     "A BD outer milestone must be spherical."
-                neighbor_anchor = model.anchors[
-                    bd_milestone.outer_milestone.neighbor_anchor_index]
-                for neighbor_milestone in neighbor_anchor.milestones:
-                    if neighbor_milestone.index != \
-                            bd_milestone.outer_milestone.index:
-                        if neighbor_milestone.cv_index == \
-                                bd_milestone.outer_milestone.cv_index:
-                            bd_milestone.inner_milestone = \
-                                neighbor_milestone
-                                
-                assert bd_milestone.inner_milestone is not None, "No suitable "\
-                    "spherical milestone found for inner BD reaction "\
-                    "criteria. Make sure that there are at least 3 spherical "\
-                    "input anchors for the outermost CV."
+                
+                neighbor = model.anchors[closest_neighbor_anchor_index]
+                closest_milestone = 0
+                closest_neighbor_anchor_index = 0
+                closest_avg = 0.0
+                closest_neighbor_dist = 9e9
+                for i, milestone in enumerate(neighbor.milestones):
+                    if milestone.neighbor_anchor_index == anchor.index:
+                        continue
+                        
+                    dist = abs(milestone.variables["me_0"] - milestone.variables["neighbor_0"])
+                    if dist < closest_neighbor_dist:
+                        closest_milestone = i
+                        closest_neighbor_anchor_index = milestone.neighbor_anchor_index
+                        closest_neighbor_dist = dist
+                        closest_avg = 0.5 * (milestone.variables["me_0"] + milestone.variables["neighbor_0"])
+                
+                bd_milestone.inner_milestone = base.Milestone()
+                bd_milestone.inner_milestone.index = anchor.milestones[closest_milestone].index
+                bd_milestone.inner_milestone.neighbor_anchor_index = anchor.milestones[closest_milestone].neighbor_anchor_index
+                bd_milestone.inner_milestone.alias_index = anchor.milestones[closest_milestone].alias_index
+                bd_milestone.inner_milestone.cv_index = 0
+                bd_milestone.inner_milestone.variables = {"radius":closest_avg}
+                bd_milestone.inner_milestone.is_source_milestone = anchor.milestones[closest_milestone].is_source_milestone
+                
             
             elif model.get_type() == "elber":
                 bd_milestone.outer_milestone = anchor.milestones[1]

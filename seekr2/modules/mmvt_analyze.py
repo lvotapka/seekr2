@@ -114,7 +114,7 @@ def openmm_read_output_file_list(output_file_list, min_time=None, max_time=None,
                     start_times.append(0.0)
                 else:
                     start_times.append(start_time)
-                
+                    
                 checkpoint_times.append(checkpoint_time)
             
             files_lines.append(file_lines)
@@ -135,13 +135,25 @@ def openmm_read_output_file_list(output_file_list, min_time=None, max_time=None,
                     else:
                         
                         if no_checkpoints:
-                            next_start_time = start_times[i+1]
+                            next_start_time = 1e99
+                            for start_time in start_times[i+1:]:
+                                if start_time < next_start_time:
+                                    next_start_time = start_time
                         else:
                             if (checkpoint_times[i] is not None) and \
                                     (checkpoint_times[i+1] is not None):
-                                next_start_time = checkpoint_times[i+1]
+                                next_start_time = 1e99
+                                for checkpoint_time in checkpoint_times[i+1:]:
+                                    if checkpoint_time is None:
+                                        continue
+                                    if checkpoint_time < next_start_time:
+                                        next_start_time = checkpoint_time
+                                
                             else:
-                                next_start_time = start_times[i+1]
+                                next_start_time = 1e99
+                                for start_time in start_times[i+1:]:
+                                    if start_time < next_start_time:
+                                        next_start_time = start_time
                 else:
                     next_start_time = 1e99
                 counter = 0
