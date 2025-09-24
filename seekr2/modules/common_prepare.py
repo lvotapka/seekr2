@@ -913,7 +913,7 @@ def create_bd_milestones(model, model_input):
                 bd_milestone.inner_milestone = anchor.milestones[0]
             
             cv_index = bd_milestone.outer_milestone.cv_index
-            cv_input = model_input.cv_inputs[cv_index]
+            cv_input = model_input.cv_inputs[cv_index][0]
             if len(cv_input.bd_group1)>0:
                 bd_milestone.receptor_indices \
                     = base.parse_xml_list(cv_input.bd_group1)
